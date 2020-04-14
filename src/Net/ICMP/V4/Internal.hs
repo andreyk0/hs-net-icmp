@@ -12,65 +12,59 @@ import           Data.Binary.Get
 import           Data.Bits
 import           Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Lazy as LB
-import           Data.Monoid
 
 
-data DestinationUnreachableCode =
-    DestinationNetworkUnreachable
-  | DestinationHostUnreachable
-  | DestinationProtocolUnreachable
-  | DestinationPortUnreachable
-  | FragmentationRequired
-  | SourceRouteFailed
-  | DestinationNetworkUnknown
-  | DestinationHostUnknown
-  | SourceHostIsolated
-  | NetworkAdministrativelyProhibited
-  | HostAdministrativelyProhibited
-  | NetworkUnreachableForToS
-  | HostUnreachableForToS
-  | CommunicationAdministrativelyProhibited
-  | HostPrecedenceViolation
-  | PrecedenceCutoffInEffect
-  deriving (Eq,Show,Bounded,Enum)
+data DestinationUnreachableCode = DestinationNetworkUnreachable
+    | DestinationHostUnreachable
+    | DestinationProtocolUnreachable
+    | DestinationPortUnreachable
+    | FragmentationRequired
+    | SourceRouteFailed
+    | DestinationNetworkUnknown
+    | DestinationHostUnknown
+    | SourceHostIsolated
+    | NetworkAdministrativelyProhibited
+    | HostAdministrativelyProhibited
+    | NetworkUnreachableForToS
+    | HostUnreachableForToS
+    | CommunicationAdministrativelyProhibited
+    | HostPrecedenceViolation
+    | PrecedenceCutoffInEffect
+    deriving (Eq, Show, Bounded, Enum)
 
 
-data RedirectCode =
-    RedirectNetwork
-  | RedirectHost
-  | RedirectToSAndNetwork
-  | RedirectToSAndHost
-  deriving (Eq,Show,Bounded,Enum)
+data RedirectCode = RedirectNetwork
+    | RedirectHost
+    | RedirectToSAndNetwork
+    | RedirectToSAndHost
+    deriving (Eq, Show, Bounded, Enum)
 
 
 
-data TimeExceededCode =
-    TTLExpiredInTransit
-  | FragmentReassemblyTimeExceeded
-  deriving (Eq,Show,Bounded,Enum)
+data TimeExceededCode = TTLExpiredInTransit
+    | FragmentReassemblyTimeExceeded
+    deriving (Eq, Show, Bounded, Enum)
 
 
-data ParameterProblemCode =
-    PointerIndicatesTheError
-  | MissingARequiredOption
-  | BadLength
-  deriving (Eq,Show,Bounded,Enum)
+data ParameterProblemCode = PointerIndicatesTheError
+    | MissingARequiredOption
+    | BadLength
+    deriving (Eq, Show, Bounded, Enum)
 
 
 -- https://tools.ietf.org/html/rfc792
-data ICMPMessageType =
-    EchoReply
-  | DestinationUnreachable !DestinationUnreachableCode
-  | Redirect !RedirectCode
-  | EchoRequest
-  | RouterAdvertisement
-  | RouterSolicitation
-  | TimeExceeded !TimeExceededCode
-  | ParameterProblem !ParameterProblemCode
-  | Timestamp
-  | TimestampReply
-  | OtherMessage !Word8 !Word8
-  deriving (Eq,Show)
+data ICMPMessageType = EchoReply
+    | DestinationUnreachable !DestinationUnreachableCode
+    | Redirect !RedirectCode
+    | EchoRequest
+    | RouterAdvertisement
+    | RouterSolicitation
+    | TimeExceeded !TimeExceededCode
+    | ParameterProblem !ParameterProblemCode
+    | Timestamp
+    | TimestampReply
+    | OtherMessage !Word8 !Word8
+    deriving (Eq, Show)
 
 
 encodeIcmpMessageType :: ICMPMessageType -> (Word8, Word8)
@@ -129,11 +123,12 @@ instance Binary ICMPMessageType where
 
 
 
-data ICMPHeader =
-  ICMPHeader { icmpMessageType :: !ICMPMessageType
-             , icmpCksum :: !Word16
-             , icmpHeaderData :: !Word32
-             } deriving (Eq,Show)
+data ICMPHeader = ICMPHeader
+    { icmpMessageType :: !ICMPMessageType
+    , icmpCksum       :: !Word16
+    , icmpHeaderData  :: !Word32
+    }
+    deriving (Eq, Show)
 
 
 instance Binary ICMPHeader where
@@ -147,10 +142,11 @@ instance Binary ICMPHeader where
            return $ ICMPHeader t c d
 
 
-data ICMPMessage =
-  ICMPMessage { icmpHeader :: !ICMPHeader
-              , icmpPayload :: !ByteString
-              } deriving (Eq, Show)
+data ICMPMessage = ICMPMessage
+    { icmpHeader  :: !ICMPHeader
+    , icmpPayload :: !ByteString
+    }
+    deriving (Eq, Show)
 
 
 instance Binary ICMPMessage where

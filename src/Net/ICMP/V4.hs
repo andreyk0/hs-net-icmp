@@ -31,20 +31,20 @@ module Net.ICMP.V4 (
 import           Control.Concurrent.MVar
 import           Data.Binary
 import           Data.Bits
-import           Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as LB
+import           Data.ByteString.Lazy      (ByteString)
+import qualified Data.ByteString.Lazy      as LB
 import           Data.Maybe
 import           Net.ICMP.V4.Internal
-import           Network.Socket hiding (send, sendTo, recv, recvFrom)
+import           Network.Socket
 import           Network.Socket.ByteString
-import           System.Random (randomIO)
+import           System.Random             (randomIO)
 
 
-data PingPong =
-  PingPong { _ppSocket :: Socket
-           , _ppId :: Word16
-           , _ppSeq :: MVar Word16
-           }
+data PingPong = PingPong
+    { _ppSocket :: Socket
+    , _ppId     :: Word16
+    , _ppSeq    :: MVar Word16
+    }
 
 newPingPong :: IO PingPong
 newPingPong = PingPong <$> newIcmpSocket <*> randomIO <*> newMVar 0
