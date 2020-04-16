@@ -33,7 +33,7 @@ main = do
          threadDelay 1000000
 
   let pongLoop = do r@(_,s,_) <- pong pp 128
-                    putStrLn $ "<- " <> (show r)
+                    putStrLn $ "<- " <> show r
                     when (s > 10) $ putMVar exitMv ()
                     pongLoop
 

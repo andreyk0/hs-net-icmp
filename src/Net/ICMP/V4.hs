@@ -1,23 +1,17 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE TypeApplications #-}
 
 {-- Models and helper methods for working with IPV4 ICMP messages.
  -  https://en.wikipedia.org/wiki/Ping_(networking_utility)
  --}
 module Net.ICMP.V4 (
-  DestinationUnreachableCode(..)
-, ICMPHeader(..)
-, ICMPMessage(..)
-, ICMPMessageType(..)
-, ParameterProblemCode(..)
+  module Net.ICMP.V4.Internal
+
 , PingPong
-, RedirectCode(..)
-, TimeExceededCode(..)
 
 , closePingPong
-, icmpAddMessageChecksum
 , icmpRecvFrom
 , icmpSendTo
-, icmpVerifyChecksum
 , lookupHost
 , newIcmpSocket
 , newPingPong
@@ -29,6 +23,8 @@ module Net.ICMP.V4 (
 
 
 import           Control.Concurrent.MVar
+import           Control.Exception
+import           Control.Monad
 import           Data.Binary
 import           Data.Bits
 import           Data.ByteString.Lazy      (ByteString)
@@ -67,12 +63,12 @@ ping PingPong{..} addr payload = do
   s <- takeMVar _ppSeq
   putMVar _ppSeq (s+1)
 
-  let hdrDat = (shiftL (fromIntegral _ppId) 16) .|. (fromIntegral s)
+  let hdrDat = shiftL (fromIntegral _ppId) 16 .|. fromIntegral s
       hdr = ICMPHeader EchoRequest 0 hdrDat
       msg = ICMPMessage hdr payload
 
-  _ <- icmpSendTo _ppSocket msg addr
-  return s
+  void $ icmpSendTo _ppSocket msg addr
+  pure s
 
 
 pong :: PingPong
@@ -83,19 +79,20 @@ pong pp@PingPong{..} mbytes = do
 
   let ICMPHeader{..} = icmpHeader
       mpid = fromIntegral $ shiftR icmpHeaderData 16
-      mseq = fromIntegral $ icmpHeaderData
+      mseq = fromIntegral icmpHeaderData
 
-  if ( (msg == icmpAddMessageChecksum msg) && (mpid == _ppId) )
-  then return (sa, mseq, icmpPayload)
+  if (msg == icmpAddMessageChecksum msg) && (mpid == _ppId)
+  then pure (sa, mseq, icmpPayload)
   else pong pp mbytes
-
 
 
 lookupHost :: String
            -> IO (Maybe SockAddr)
 lookupHost n = do
-  addrInfos <- getAddrInfo Nothing (Just n) Nothing
-  return $ fmap addrAddress $ listToMaybe addrInfos
+  addr <- try @SomeException $ do
+    ainfos <- getAddrInfo Nothing (Just n) Nothing
+    pure $ addrAddress <$> listToMaybe ainfos
+  pure $ either (const Nothing) id addr
 
 
 newIcmpSocket :: IO Socket
@@ -118,5 +115,5 @@ icmpRecvFrom s m = do
   -- received data contains an IPv4 header
   (dat, sa) <- recvFrom s (m + 28) -- 20b IPv4 header + 8b ICMP header
   let icmpDat = (LB.drop 20 . LB.fromStrict) dat
-  let m1 = decode icmpDat
-  return (m1, sa)
+      m1 = decode icmpDat
+  pure (m1, sa)

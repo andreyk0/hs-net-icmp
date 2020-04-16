@@ -1,16 +1,13 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-import           Data.Either
-import           Data.List
-import           Net.ICMP.V4.Internal
-import           Test.Framework (defaultMain, testGroup)
-import           Test.Framework.Providers.HUnit
-import           Test.Framework.Providers.QuickCheck2 (testProperty)
-import           Test.HUnit
-import           Test.QuickCheck
-import           Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.ByteString.Lazy.Char8 as C
 import           Data.Binary
+import           Data.ByteString.Lazy                 (ByteString)
+import qualified Data.ByteString.Lazy.Char8           as C
+import           Net.ICMP.V4.Internal
+import           Test.Framework                       (Test, defaultMain,
+                                                       testGroup)
+import           Test.Framework.Providers.QuickCheck2 (testProperty)
+import           Test.QuickCheck
 
 
 instance Arbitrary DestinationUnreachableCode where
@@ -27,19 +24,18 @@ instance Arbitrary ParameterProblemCode where
 
 instance Arbitrary ICMPMessageType where
   arbitrary = oneof [
-      return EchoReply
-    , fmap DestinationUnreachable arbitrary
-    , fmap Redirect arbitrary
-    , return EchoRequest
-    , return RouterAdvertisement
-    , return RouterSolicitation
-    , fmap TimeExceeded arbitrary
-    , fmap ParameterProblem arbitrary
-    , return Timestamp
-    , return TimestampReply
-    , do t <- suchThat arbitrary (>14)
-         c <- arbitrary
-         return $ OtherMessage t c
+      pure EchoReply
+    , DestinationUnreachable <$> arbitrary
+    , Redirect <$> arbitrary
+    , pure EchoRequest
+    , pure RouterAdvertisement
+    , pure RouterSolicitation
+    , TimeExceeded <$> arbitrary
+    , ParameterProblem <$> arbitrary
+    , pure Timestamp
+    , pure TimestampReply
+    , OtherMessage <$> suchThat arbitrary (>14)
+                   <*> arbitrary
     ]
 
 instance Arbitrary ICMPHeader where
@@ -50,11 +46,13 @@ instance Arbitrary ICMPMessage where
 
 
 instance Arbitrary ByteString where
-  arbitrary = fmap C.pack $ listOf arbitrary
+  arbitrary = C.pack <$> listOf arbitrary
 
 
+main :: IO ()
 main = defaultMain tests
 
+tests :: [Test]
 tests = [
     testGroup "ICMP" [
       testProperty "encode/decode ICMPMessageType" prop_encodeDecodeMessageType
@@ -69,7 +67,7 @@ prop_encodeDecodeMessageType mt =
   let (w1, w2) = encodeIcmpMessageType mt
       dMt = decodeIcmpMessageType w1 w2
    in case dMt
-        of Left x    -> False
+        of Left _    -> False
            Right mt1 -> mt1 == mt
 
 

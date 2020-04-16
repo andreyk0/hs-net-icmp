@@ -105,7 +105,7 @@ word8ToEnumErr errStr w =
       eMax = fromEnum (maxBound :: a)
       idx = fromIntegral w
    in if (idx < eMin) || (idx > eMax)
-      then Left $ "Unable to parse " <> errStr <> ", " <> (show w) <> " is out of [" <> (show eMin) <> ", " <> (show eMax) <> "] bounds."
+      then Left $ "Unable to parse " <> errStr <> ", " <> show w <> " is out of [" <> show eMin <> ", " <> show eMax <> "] bounds."
       else Right $ toEnum idx
 
 
@@ -160,7 +160,7 @@ instance Binary ICMPMessage where
 
 
 icmpVerifyChecksum :: ICMPMessage -> Bool
-icmpVerifyChecksum m = m == (icmpAddMessageChecksum m)
+icmpVerifyChecksum m = m == icmpAddMessageChecksum m
 
 
 icmpAddMessageChecksum :: ICMPMessage -> ICMPMessage
@@ -169,7 +169,7 @@ icmpAddMessageChecksum m@ICMPMessage{..} = m { icmpHeader = icmpHeader { icmpCks
 
         -- From http://programatica.cs.pdx.edu/House/
         checksum :: ByteString -> Word16
-        checksum bs = let bs' = (if (LB.length bs) `mod` 2 == 0 then bs else LB.snoc bs 0)
+        checksum bs = let bs' = (if LB.length bs `mod` 2 == 0 then bs else LB.snoc bs 0)
                           ws = runGet listOfWord16 bs'
                           total = sum (map fromIntegral ws) :: Word32
                        in complement (fromIntegral total + fromIntegral (total `shiftR` 16))
